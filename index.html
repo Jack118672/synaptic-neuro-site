@@ -1,0 +1,1835 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Synaptic Plasticity Brain Atlas</title>
+  <meta name="description" content="A presentation-ready 3D anatomy exhibit on brain tumor scale, synaptic plasticity, memory, identity, Alzheimer's disease, Parkinson's disease, and exploratory evidence from supplied research files." />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23080b10'/%3E%3Cpath d='M18 34c0-10 7-18 16-18 7 0 12 5 12 12 4 1 7 5 7 10 0 7-6 12-13 12H25c-6 0-11-5-11-11 0-2 1-4 4-5Z' fill='%2325d0c1' opacity='.9'/%3E%3Ccircle cx='26' cy='32' r='4' fill='%23f6c85f'/%3E%3Ccircle cx='40' cy='28' r='3' fill='%23ff6b6b'/%3E%3Cpath d='M26 32l14-4 5 11' stroke='%23fff' stroke-width='4' stroke-linecap='round' fill='none'/%3E%3C/svg%3E" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.165.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.165.0/examples/jsm/"
+      }
+    }
+  </script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #080b10;
+      --ink: #eef7f5;
+      --muted: #a9b9bd;
+      --line: rgba(255, 255, 255, 0.16);
+      --panel: rgba(13, 18, 23, 0.78);
+      --panel-strong: rgba(16, 24, 31, 0.94);
+      --cyan: #25d0c1;
+      --amber: #f6c85f;
+      --red: #ff6b6b;
+      --violet: #b195ff;
+      --green: #83e377;
+      --white: #ffffff;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+      --radius: 8px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      background: var(--bg);
+      overflow-x: clip;
+    }
+
+    body {
+      margin: 0;
+      min-width: 0;
+      overflow-x: clip;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 20% 0%, rgba(37, 208, 193, 0.18), transparent 32rem),
+        radial-gradient(circle at 80% 12%, rgba(177, 149, 255, 0.18), transparent 34rem),
+        linear-gradient(135deg, #080b10 0%, #11100f 48%, #071211 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.42;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent 76%);
+      z-index: -1;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      max-width: 100%;
+      display: block;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.75rem clamp(1rem, 3vw, 2.5rem);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(8, 11, 16, 0.68);
+      backdrop-filter: blur(18px);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.65rem;
+      font-weight: 760;
+      letter-spacing: 0;
+      white-space: nowrap;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 1.85rem;
+      height: 1.85rem;
+      border-radius: 7px;
+      background:
+        radial-gradient(circle at 34% 48%, var(--amber) 0 13%, transparent 14%),
+        radial-gradient(circle at 68% 38%, var(--red) 0 11%, transparent 12%),
+        linear-gradient(135deg, var(--cyan), #188ee5);
+      box-shadow: 0 0 28px rgba(37, 208, 193, 0.35);
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: clamp(0.55rem, 2vw, 1.35rem);
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    nav a {
+      padding: 0.35rem 0;
+      border-bottom: 1px solid transparent;
+    }
+
+    nav a:hover,
+    nav a:focus-visible {
+      color: var(--ink);
+      border-color: var(--cyan);
+      outline: none;
+    }
+
+    .hero {
+      min-height: 100svh;
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(22rem, 0.8fr);
+      gap: clamp(1rem, 3vw, 2.4rem);
+      align-items: start;
+      padding: 5.8rem clamp(1rem, 3vw, 2.5rem) 2.2rem;
+    }
+
+    .stage {
+      position: sticky;
+      top: 5.8rem;
+      min-height: 33rem;
+      height: clamp(33rem, calc(100svh - 8rem), 42rem);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: var(--radius);
+      overflow: hidden;
+      scroll-margin-top: 5rem;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015)),
+        radial-gradient(circle at center, rgba(37, 208, 193, 0.16), transparent 44%);
+      box-shadow: var(--shadow);
+    }
+
+    #brainCanvas {
+      width: 100%;
+      height: 100%;
+      min-height: 33rem;
+      height: 100%;
+      display: block;
+    }
+
+    .stage-overlay {
+      position: absolute;
+      left: 1rem;
+      right: 1rem;
+      bottom: 1rem;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.65rem;
+      pointer-events: none;
+    }
+
+    .region-pill {
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(8, 11, 16, 0.58);
+      backdrop-filter: blur(12px);
+      border-radius: var(--radius);
+      padding: 0.65rem;
+      min-height: 4.8rem;
+    }
+
+    .region-pill strong {
+      display: block;
+      font-size: 0.88rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .region-pill span {
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.35;
+    }
+
+    .stage.body-view .stage-overlay,
+    .stage.tumor-view .stage-overlay {
+      display: none;
+    }
+
+    .control-panel {
+      align-self: stretch;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .intro-copy {
+      padding: clamp(1rem, 2.5vw, 1.45rem);
+      border-radius: var(--radius);
+      border: 1px solid rgba(255,255,255,0.14);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .kicker {
+      color: var(--cyan);
+      font-size: 0.82rem;
+      font-weight: 780;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin: 0;
+      letter-spacing: 0;
+      line-height: 1.02;
+    }
+
+    h1 {
+      margin-top: 0.65rem;
+      font-size: clamp(2.4rem, 5.8vw, 6.8rem);
+      max-width: 10ch;
+    }
+
+    .lead {
+      color: #d5e2e0;
+      font-size: clamp(1rem, 1.55vw, 1.25rem);
+      line-height: 1.55;
+      max-width: 62ch;
+      margin: 1rem 0 0;
+    }
+
+    .mode-grid,
+    .scale-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.7rem;
+    }
+
+    .scale-grid {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .mode-button,
+    .scale-button {
+      min-height: 4.9rem;
+      cursor: pointer;
+      color: var(--ink);
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,0.055);
+      text-align: left;
+      padding: 0.8rem;
+      transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+    }
+
+    .scale-button {
+      min-height: 3.5rem;
+      text-align: center;
+      padding: 0.65rem 0.45rem;
+    }
+
+    .mode-button:hover,
+    .mode-button:focus-visible,
+    .scale-button:hover,
+    .scale-button:focus-visible {
+      border-color: rgba(37, 208, 193, 0.72);
+      outline: none;
+      transform: translateY(-1px);
+    }
+
+    .mode-button.active,
+    .scale-button.active {
+      background: linear-gradient(135deg, rgba(37,208,193,0.22), rgba(246,200,95,0.12));
+      border-color: rgba(37, 208, 193, 0.85);
+    }
+
+    .mode-button strong {
+      display: block;
+      font-size: 0.98rem;
+      margin-bottom: 0.22rem;
+    }
+
+    .mode-button span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.35;
+    }
+
+    .scale-button span {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 780;
+    }
+
+    .scale-label {
+      color: var(--cyan);
+      font-size: 0.78rem;
+      font-weight: 780;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: -0.35rem;
+    }
+
+    .readout,
+    .slider-panel,
+    .source-note {
+      border-radius: var(--radius);
+      border: 1px solid rgba(255,255,255,0.14);
+      background: var(--panel);
+      padding: 1rem;
+    }
+
+    .readout h2 {
+      font-size: clamp(1.45rem, 2.4vw, 2.15rem);
+      margin-bottom: 0.65rem;
+    }
+
+    .readout p,
+    .source-note p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 0.96rem;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.6rem;
+      margin-top: 1rem;
+    }
+
+    .metric {
+      border-top: 1px solid rgba(255,255,255,0.15);
+      padding-top: 0.7rem;
+    }
+
+    .metric strong {
+      display: block;
+      color: var(--white);
+      font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+      line-height: 1;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.76rem;
+      line-height: 1.32;
+      margin-top: 0.35rem;
+    }
+
+    .slider-panel {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .tumor-controls {
+      display: grid;
+      gap: 0.85rem;
+      border-radius: var(--radius);
+      border: 1px solid rgba(255,255,255,0.14);
+      background: linear-gradient(135deg, rgba(255,107,107,0.13), rgba(246,200,95,0.08));
+      padding: 1rem;
+    }
+
+    .tumor-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: baseline;
+    }
+
+    .tumor-header span {
+      color: var(--cyan);
+      font-size: 0.78rem;
+      font-weight: 780;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .tumor-header strong {
+      color: var(--white);
+      font-size: 1.45rem;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+
+    .tumor-size-buttons {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+
+    .size-button {
+      min-height: 2.65rem;
+      cursor: pointer;
+      color: var(--ink);
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,0.055);
+      font-weight: 760;
+      transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+    }
+
+    .size-button:hover,
+    .size-button:focus-visible {
+      border-color: rgba(255, 107, 107, 0.72);
+      outline: none;
+      transform: translateY(-1px);
+    }
+
+    .size-button.active {
+      background: linear-gradient(135deg, rgba(255,107,107,0.24), rgba(246,200,95,0.12));
+      border-color: rgba(255, 107, 107, 0.85);
+    }
+
+    .tumor-metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.65rem;
+    }
+
+    .tumor-metric {
+      border-top: 1px solid rgba(255,255,255,0.15);
+      padding-top: 0.55rem;
+    }
+
+    .tumor-metric strong {
+      display: block;
+      color: var(--white);
+      font-size: 1.15rem;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+
+    .tumor-metric span,
+    .tumor-note {
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.4;
+    }
+
+    .tumor-note {
+      margin: 0;
+    }
+
+    .slider-row {
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .slider-row label {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      color: #d8e6e4;
+      font-size: 0.9rem;
+      font-weight: 650;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--cyan);
+    }
+
+    .section {
+      padding: clamp(3rem, 7vw, 7rem) clamp(1rem, 3vw, 2.5rem);
+    }
+
+    .section-inner {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    .section-header {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(18rem, 0.7fr);
+      gap: clamp(1rem, 4vw, 4rem);
+      align-items: end;
+      margin-bottom: clamp(1.4rem, 3vw, 2.4rem);
+    }
+
+    .section-header h2 {
+      font-size: clamp(2rem, 4.2vw, 4.25rem);
+    }
+
+    .section-header p {
+      color: var(--muted);
+      line-height: 1.6;
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .evidence-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.85rem;
+    }
+
+    .evidence-card {
+      min-height: 14.5rem;
+      border: 1px solid rgba(255,255,255,0.13);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025));
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .evidence-card b {
+      color: var(--cyan);
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .evidence-card strong {
+      display: block;
+      font-size: clamp(1.45rem, 2.8vw, 2.3rem);
+      line-height: 1;
+      margin: 0.75rem 0;
+    }
+
+    .evidence-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.48;
+      font-size: 0.94rem;
+    }
+
+    .story-band {
+      background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0));
+      border-top: 1px solid rgba(255,255,255,0.11);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+      gap: clamp(1rem, 3vw, 2.4rem);
+      align-items: start;
+    }
+
+    .text-stack {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .text-block {
+      border-left: 3px solid var(--cyan);
+      padding-left: 1rem;
+    }
+
+    .text-block h3 {
+      font-size: 1.35rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .text-block p,
+    .source-list li {
+      color: var(--muted);
+      line-height: 1.62;
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .gene-board {
+      border: 1px solid rgba(255,255,255,0.13);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: rgba(255,255,255,0.045);
+    }
+
+    .gene-board img {
+      width: 100%;
+      min-height: 18rem;
+      object-fit: cover;
+      background: #fff;
+    }
+
+    .gene-caption {
+      padding: 0.85rem 1rem;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 0.9rem;
+      border-top: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .pathway {
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .pathway-row {
+      display: grid;
+      grid-template-columns: 9rem minmax(0, 1fr) 5rem;
+      gap: 0.85rem;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.11);
+      padding: 0.85rem 0;
+    }
+
+    .pathway-row span:first-child {
+      color: #dbe8e6;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .bar {
+      height: 0.75rem;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.1);
+    }
+
+    .bar i {
+      display: block;
+      height: 100%;
+      width: var(--w);
+      background: linear-gradient(90deg, var(--cyan), var(--amber), var(--red));
+      border-radius: inherit;
+    }
+
+    .pathway-row span:last-child {
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.9rem;
+    }
+
+    .presenter-track {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0.85rem;
+    }
+
+    .presenter-step {
+      border: 1px solid rgba(255,255,255,0.13);
+      border-radius: var(--radius);
+      padding: 1rem;
+      min-height: 13rem;
+      background: rgba(255,255,255,0.045);
+      display: grid;
+      align-content: start;
+      gap: 0.65rem;
+    }
+
+    .presenter-step b {
+      color: var(--amber);
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .presenter-step h3 {
+      font-size: 1.25rem;
+    }
+
+    .presenter-step p {
+      color: var(--muted);
+      line-height: 1.55;
+      margin: 0;
+      font-size: 0.94rem;
+    }
+
+    .concept-card {
+      border: 1px solid rgba(255,255,255,0.13);
+      border-radius: var(--radius);
+      padding: 1rem;
+      background: rgba(255,255,255,0.045);
+    }
+
+    .concept-card h3 {
+      font-size: 1.2rem;
+      margin-bottom: 0.7rem;
+    }
+
+    .concept-card p {
+      color: var(--muted);
+      line-height: 1.58;
+      margin: 0;
+      font-size: 0.96rem;
+    }
+
+    .quote-panel {
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: var(--radius);
+      background: var(--panel-strong);
+      padding: clamp(1.1rem, 3vw, 2rem);
+    }
+
+    .quote-panel p {
+      margin: 0;
+      color: #e7f2f0;
+      font-size: clamp(1.2rem, 2.1vw, 1.7rem);
+      line-height: 1.45;
+    }
+
+    .source-list {
+      columns: 2;
+      column-gap: 2rem;
+      padding-left: 1.1rem;
+      margin: 0;
+    }
+
+    .source-list li {
+      break-inside: avoid;
+      margin: 0 0 0.8rem;
+      font-size: 0.92rem;
+    }
+
+    footer {
+      padding: 2rem clamp(1rem, 3vw, 2.5rem) 3rem;
+      color: var(--muted);
+      border-top: 1px solid rgba(255,255,255,0.12);
+    }
+
+    footer .section-inner {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 980px) {
+      nav {
+        display: none;
+      }
+
+      .hero,
+      .section-header,
+      .split {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        max-width: 12ch;
+      }
+
+      .stage {
+        position: relative;
+        top: auto;
+      }
+
+      .evidence-grid,
+      .concept-grid,
+      .presenter-track {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 680px) {
+      .brand span:last-child {
+        max-width: calc(100vw - 5.5rem);
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .hero {
+        padding-top: 5rem;
+      }
+
+      .mode-grid,
+      .scale-grid,
+      .tumor-size-buttons,
+      .metrics,
+      .tumor-metrics,
+      .evidence-grid,
+      .concept-grid,
+      .presenter-track {
+        grid-template-columns: 1fr;
+      }
+
+      .stage-overlay {
+        display: none;
+      }
+
+      .stage {
+        min-height: 28rem;
+        height: 30rem;
+      }
+
+      #brainCanvas {
+        min-height: 28rem;
+        height: 100%;
+      }
+
+      .pathway-row {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+      }
+
+      .pathway-row span:last-child {
+        text-align: left;
+      }
+
+      .source-list {
+        columns: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="Synaptic Plasticity Brain Atlas home">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>Synaptic Plasticity Brain Atlas</span>
+    </a>
+    <nav aria-label="Sections">
+      <a href="#zoom">Zoom Model</a>
+      <a href="#evidence">Evidence</a>
+      <a href="#genes">Gene Map</a>
+      <a href="#disease">Disease</a>
+      <a href="#restoration">Restoration</a>
+      <a href="#sources">Sources</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero" aria-labelledby="main-title">
+      <div class="stage" aria-label="Interactive 3D brain model">
+        <canvas id="brainCanvas"></canvas>
+        <div class="stage-overlay" aria-hidden="true">
+          <div class="region-pill"><strong>Entorhinal cortex</strong><span>High local CPS in the supplied SEA-AD file.</span></div>
+          <div class="region-pill"><strong>Hippocampus</strong><span>Encoding, consolidation, and memory prosthesis evidence.</span></div>
+          <div class="region-pill"><strong>Striatum</strong><span>Dopamine-tuned action learning in Parkinson's disease.</span></div>
+          <div class="region-pill"><strong>Visual cortex</strong><span>Lower local CPS benchmark in the supplied comparison.</span></div>
+        </div>
+      </div>
+
+      <aside class="control-panel" aria-label="Research controls">
+        <div class="intro-copy">
+          <div class="kicker">Presentation model</div>
+          <h1 id="main-title">A brain tumor is not just a dot.</h1>
+          <p class="lead">My opening point would be simple: a tumor has physical scale. When it grows inside the brain, the effect is not only the visible mass. Pressure, swelling, infiltration, and circuit disruption can change memory, movement, speech, mood, and independence.</p>
+        </div>
+
+        <div class="tumor-controls" aria-label="Tumor scale controls">
+          <div class="tumor-header">
+            <span>Brain tumor scale</span>
+            <strong id="tumorDiameterValue">4.0 cm</strong>
+          </div>
+          <div class="slider-row">
+            <label for="tumorSlider"><span>Diameter-equivalent size</span><span id="tumorMmValue">40 mm</span></label>
+            <input id="tumorSlider" type="range" min="5" max="100" value="40" />
+          </div>
+          <div class="tumor-size-buttons" role="group" aria-label="Tumor size presets">
+            <button class="size-button" type="button" data-tumor-mm="10">10 mm</button>
+            <button class="size-button" type="button" data-tumor-mm="30">30 mm</button>
+            <button class="size-button active" type="button" data-tumor-mm="40">40 mm</button>
+            <button class="size-button" type="button" data-tumor-mm="70">70 mm</button>
+          </div>
+          <div class="tumor-metrics">
+            <div class="tumor-metric"><strong id="tumorVolumeValue">33.5 cm^3</strong><span>sphere-equivalent volume</span></div>
+            <div class="tumor-metric"><strong id="tumorBrainRatio">29%</strong><span>of a 14 cm brain-width reference</span></div>
+          </div>
+          <p class="tumor-note">Real tumors are irregular and patient-specific. This model uses diameter-equivalent scale, an uneven surface, a necrotic core, swelling, and infiltrating edges so it does not look like a flat circle.</p>
+        </div>
+
+        <div class="mode-grid" role="group" aria-label="Model modes">
+          <button class="mode-button active" type="button" data-mode="tumor"><strong>Brain tumor</strong><span>Actual relative size, edema halo, and infiltrating edge.</span></button>
+          <button class="mode-button" type="button" data-mode="learning"><strong>Learning</strong><span>LTP, LTD, engrams, and the plasticity-stability problem.</span></button>
+          <button class="mode-button" type="button" data-mode="alzheimers"><strong>Alzheimer's</strong><span>Entorhinal and hippocampal pressure from tau/amyloid pathology.</span></button>
+          <button class="mode-button" type="button" data-mode="parkinsons"><strong>Parkinson's</strong><span>Dopamine loss changes action learning and motor plasticity.</span></button>
+          <button class="mode-button" type="button" data-mode="restoration"><strong>Restoration</strong><span>Protection, stimulation, prostheses, and ethical limits.</span></button>
+        </div>
+
+        <div class="scale-label">Zoom the model</div>
+        <div class="scale-grid" role="group" aria-label="Anatomy scale">
+          <button class="scale-button active" type="button" data-scale="tumor"><span>Tumor</span></button>
+          <button class="scale-button" type="button" data-scale="body"><span>Body</span></button>
+          <button class="scale-button" type="button" data-scale="brain"><span>Brain</span></button>
+          <button class="scale-button" type="button" data-scale="circuit"><span>Circuit</span></button>
+          <button class="scale-button" type="button" data-scale="synapse"><span>Synapse</span></button>
+        </div>
+
+        <div class="readout" aria-live="polite">
+          <h2 id="modeTitle">A 4 cm tumor is visibly large inside a brain.</h2>
+          <p id="modeText">For the presentation, I would not show this as a simple red circle. I would show it as a scaled, irregular mass with a damaged center, swelling around it, and small infiltrating extensions into nearby tissue.</p>
+          <p id="scaleText">The tumor zoom keeps the brain transparent and puts the mass at real relative scale. The ruler shows diameter, while the halo reminds the audience that symptoms can come from tissue stress beyond the tumor core.</p>
+          <div class="metrics">
+            <div class="metric"><strong id="metricA">~4 cm</strong><span id="labelA">approximate GBM diameter at diagnosis in one review</span></div>
+            <div class="metric"><strong id="metricB">5-10 cm</strong><span id="labelB">reported range for many cases in an older series</span></div>
+            <div class="metric"><strong id="metricC">not round</strong><span id="labelC">irregular edge, swelling, and infiltration matter</span></div>
+          </div>
+        </div>
+
+        <div class="slider-panel">
+          <div class="slider-row">
+            <label for="burdenSlider"><span>Disease pressure</span><span id="burdenValue">42%</span></label>
+            <input id="burdenSlider" type="range" min="0" max="100" value="42" />
+          </div>
+          <div class="slider-row">
+            <label for="plasticitySlider"><span>Plasticity reserve</span><span id="plasticityValue">64%</span></label>
+            <input id="plasticitySlider" type="range" min="0" max="100" value="64" />
+          </div>
+        </div>
+
+        <div class="source-note">
+          <p>The original folders support the synaptic and neurodegenerative sections. The tumor scale module adds external clinical context and is labeled as a representative size model, not a patient-specific diagnosis.</p>
+        </div>
+      </aside>
+    </section>
+
+    <section id="zoom" class="section story-band" aria-labelledby="zoom-title">
+      <div class="section-inner">
+        <div class="section-header">
+          <h2 id="zoom-title">How I Would Present the Zoom</h2>
+          <p>Start with the tumor at real relative scale, then zoom outward and inward. The goal is to show that the disease is physical, spatial, and biological at the same time.</p>
+        </div>
+        <div class="presenter-track">
+          <article class="presenter-step">
+            <b>1. Tumor</b>
+            <h3>First, I show the mass at scale.</h3>
+            <p>The tumor is not a symbolic circle. It has an uneven surface, a damaged center, swelling around it, and infiltrating edges that can affect nearby tissue.</p>
+          </article>
+          <article class="presenter-step">
+            <b>2. Body</b>
+            <h3>Then I connect it to the body.</h3>
+            <p>The brain is part of a body. When neural circuits fail, the effects can show up as confusion, movement difficulty, sleep disruption, mood changes, speech problems, and loss of daily function.</p>
+          </article>
+          <article class="presenter-step">
+            <b>3. Brain</b>
+            <h3>Then I zoom into the organ.</h3>
+            <p>Different regions do different jobs. The hippocampus helps form memories, cortical networks store and use knowledge, and basal ganglia circuits help select actions and habits.</p>
+          </article>
+          <article class="presenter-step">
+            <b>4. Circuit</b>
+            <h3>Next, I show the pathway.</h3>
+            <p>Alzheimer's pressure appears early in entorhinal and hippocampal memory networks. Parkinson's begins from dopamine disruption that changes how action circuits learn from experience.</p>
+          </article>
+          <article class="presenter-step">
+            <b>5. Synapse</b>
+            <h3>Finally, I go microscopic.</h3>
+            <p>At the synapse, receptor traffic, calcium signals, vesicle release, tau stress, and synaptic injury markers help explain why the same disease can change both biology and lived experience.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="evidence" class="section" aria-labelledby="evidence-title">
+      <div class="section-inner">
+        <div class="section-header">
+          <h2 id="evidence-title">Evidence That Holds the Argument Up</h2>
+          <p>In my presentation, I would not say one study proves the whole argument. I would say the argument gets stronger because different kinds of evidence point in the same direction.</p>
+        </div>
+        <div class="evidence-grid">
+          <article class="evidence-card">
+            <div><b>Brain tumor scale</b><strong>~4 cm</strong></div>
+            <p>A glioblastoma overview reports tumor diameter at diagnosis is usually around 4 cm, while older data show many cases can be larger.</p>
+          </article>
+          <article class="evidence-card">
+            <div><b>LTP and learning</b><strong>30m-10h</strong></div>
+            <p>Classic experiments show that synapses can change for meaningful periods, and that blocking NMDA-dependent plasticity can disrupt spatial learning.</p>
+          </article>
+          <article class="evidence-card">
+            <div><b>SEA-AD analysis</b><strong>n = 69</strong></div>
+            <p>In the supplied files, higher pseudoprogression scores were associated with steeper decline in memory, language, and overall cognition.</p>
+          </article>
+          <article class="evidence-card">
+            <div><b>Synaptic PET</b><strong>45</strong></div>
+            <p>An SV2A-PET study of early Alzheimer's disease linked synaptic density with global cognition and multiple domains.</p>
+          </article>
+          <article class="evidence-card">
+            <div><b>Memory prosthesis</b><strong>34-37%</strong></div>
+            <p>Patterned hippocampal stimulation improved a narrow visual memory task, without implying restoration of a life story.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="genes" class="section story-band" aria-labelledby="genes-title">
+      <div class="section-inner split">
+        <div class="text-stack">
+          <div class="section-header" style="display:block;margin-bottom:0">
+            <h2 id="genes-title">A Gene Map, Not a Self Gene</h2>
+          </div>
+          <div class="text-block">
+            <h3>Distributed biology</h3>
+            <p>I would be careful here: this is not a map of identity. It is a map of gene expression. The Allen Human Brain Atlas file connects 3,702 tissue samples from six adult donors to 68 cortical regions.</p>
+          </div>
+          <div class="text-block">
+            <h3>Regional specialization</h3>
+            <p>CAMK2A, GRIN1, MAPT, APP, SNCA, BDNF, FOS, and related genes do not share one identical cortical pattern. That supports the report's safer claim: identity-relevant biology is distributed across interacting systems.</p>
+          </div>
+          <div class="text-block">
+            <h3>Interpretation limit</h3>
+            <p>The heatmap is a healthy reference and each row is scaled within its own gene. A hot color does not mark a region as more human; it marks relative expression within that gene's cortical distribution.</p>
+          </div>
+        </div>
+        <figure class="gene-board">
+          <img src="assets/heatmap_AllenHBA_synaptic_genes.png" alt="Heatmap of synaptic gene expression across Allen Human Brain Atlas cortical regions" />
+          <figcaption class="gene-caption">Supplied heatmap: synaptic and disease-relevant genes across FreeSurfer cortical regions. Used as anatomical and molecular context, not as a diagnostic map.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="disease" class="section" aria-labelledby="disease-title">
+      <div class="section-inner">
+        <div class="section-header">
+          <h2 id="disease-title">How Disease Rewrites the Rules</h2>
+          <p>A brain tumor, Alzheimer's disease, and Parkinson's disease can all change lived experience, but they do it through different mechanisms: mass effect and infiltration, memory-network pathology, or dopamine/action-learning failure.</p>
+        </div>
+        <div class="split">
+          <div class="pathway" aria-label="Alzheimer's regional pathology comparison">
+            <div class="pathway-row"><span>Medial entorhinal</span><div class="bar" style="--w: 77%"><i></i></div><span>0.766</span></div>
+            <div class="pathway-row"><span>Hippocampus</span><div class="bar" style="--w: 67%"><i></i></div><span>0.672</span></div>
+            <div class="pathway-row"><span>Primary visual</span><div class="bar" style="--w: 33%"><i></i></div><span>0.328</span></div>
+            <div class="pathway-row"><span>Memory slope</span><div class="bar" style="--w: 47%"><i></i></div><span>rho -0.47</span></div>
+            <div class="pathway-row"><span>Language slope</span><div class="bar" style="--w: 40%"><i></i></div><span>rho -0.40</span></div>
+          </div>
+          <div class="text-stack">
+            <div class="text-block">
+              <h3>Brain tumors</h3>
+              <p>For a professor, I would emphasize the physical scale first. A tumor can occupy visible brain space, push or irritate surrounding tissue, and grow into nearby brain. The model shows the mass, the swelling zone, and the infiltrating edge separately.</p>
+            </div>
+            <div class="text-block">
+              <h3>Alzheimer's disease</h3>
+              <p>The supplied SEA-AD file showed higher median local CPS in medial entorhinal cortex and hippocampus than in primary visual cortex. I would use that to explain why memory-network damage can appear early and feel personal.</p>
+            </div>
+            <div class="text-block">
+              <h3>Parkinson's disease</h3>
+            <p>Parkinson's begins from a different circuit problem: dopamine loss changes plasticity rules in basal ganglia and motor networks. That can affect movement, action selection, motivation, habit learning, and cognitive flexibility.</p>
+            </div>
+            <div class="text-block">
+              <h3>Synaptic injury markers</h3>
+              <p>In the provided CSF table, SYT1 correlated strongly with p-tau181 and total tau, while SNAP25 showed moderate positive relationships. Higher CSF synaptic markers can indicate synaptic stress or injury, not healthier synapses.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="restoration" class="section story-band" aria-labelledby="restore-title">
+      <div class="section-inner">
+        <div class="section-header">
+          <h2 id="restore-title">Restoration Is Not a Reset Button</h2>
+          <p>This is where I would slow down. The science is exciting, but restoring a complete human memory would require knowing the cells, strengths, context, emotion, retrieval history, and surviving network state.</p>
+        </div>
+        <div class="concept-grid">
+          <article class="concept-card">
+            <h3>Protect surviving networks</h3>
+            <p>Near-term strategies are more plausible when they slow pathology, reduce inflammation, support synaptic maintenance, and strengthen remaining circuits.</p>
+          </article>
+          <article class="concept-card">
+            <h3>Use precise stimulation</h3>
+            <p>Deep brain stimulation and hippocampal prosthesis studies show that targeted activity can change function, but benefits depend on timing, task, electrode position, and brain state.</p>
+          </article>
+          <article class="concept-card">
+            <h3>Guard mental privacy</h3>
+            <p>Memory-altering or brain-recording technologies require strict consent, ownership, fairness, and dignity protections because neural information sits close to identity.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="thesis-title">
+      <div class="section-inner quote-panel">
+        <h2 id="thesis-title" class="kicker">Careful conclusion</h2>
+        <p>Synaptic plasticity is a central physical support for memory and personal continuity, but the self is not a single biological object. It is an emergent process involving whole-brain networks, the body, development, and relationships.</p>
+      </div>
+    </section>
+
+    <section id="sources" class="section story-band" aria-labelledby="sources-title">
+      <div class="section-inner">
+        <div class="section-header">
+          <h2 id="sources-title">Source Backbone</h2>
+        </div>
+        <ul class="source-list">
+          <li>Final papers: "Synaptic Plasticity as the Physical Substrate of the Self" and the updated evidence revision.</li>
+          <li>Provided data: AllenHBA_to_DKRegion_Map.xls, synaptic_genes_AllenHBA_DK_regions_numeric.csv, heatmap_AllenHBA_synaptic_genes.png, ConsistentGOGroups.tsv.</li>
+          <li>SEA-AD materials: continuous_pseudoprogression_scores.xlsx, harmonized_cognitive_scores.xlsx, mri_volumetrics.xlsx, antemortem_imaging.xlsx.</li>
+          <li>Figure tables: Figure_1.txt, Figure_2.txt, Figure_4_and_5.txt, plus columns_metadata.csv.</li>
+          <li>Referenced studies include Bliss and Lomo 1973; Morris et al. 1986; Liu et al. 2012; Spreng and Grady 2010; Mecca et al. 2022; Chen et al. 2021; Ossenkoppele et al. 2022; Kishore et al. 2012; Hampson et al. 2018; French and Paus 2015; Gabitto et al. 2024; Ao et al. 2025.</li>
+          <li>Tumor scale references: <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4248049/" target="_blank" rel="noreferrer">Urbanska et al. 2014 glioblastoma overview</a> for the approximate 4 cm diagnosis-size reference; <a href="https://www.cancer.gov/types/brain/patient/adult-brain-treatment-pdq" target="_blank" rel="noreferrer">NCI Adult CNS Tumors PDQ</a> for CNS tumor context; <a href="https://www.mayoclinic.org/diseases-conditions/glioblastoma/diagnosis-treatment/drc-20569078" target="_blank" rel="noreferrer">Mayo Clinic</a> for glioblastoma infiltration and treatment context.</li>
+          <li>Scope: educational synthesis and exploratory analysis, not diagnosis, treatment advice, or proof that one region or gene contains identity.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="section-inner">
+      <span>Synaptic Plasticity Brain Atlas</span>
+      <span>Interactive educational exhibit from supplied research folders.</span>
+    </div>
+  </footer>
+
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+    const canvas = document.getElementById("brainCanvas");
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x080b10, 7, 18);
+
+    const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 80);
+    camera.position.set(0, 1.05, 10.4);
+
+    const controls = new OrbitControls(camera, canvas);
+    controls.enableDamping = true;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.38;
+    controls.enablePan = false;
+    controls.minDistance = 7.4;
+    controls.maxDistance = 13;
+
+    const ambient = new THREE.AmbientLight(0x8adfd8, 1.4);
+    scene.add(ambient);
+    const key = new THREE.DirectionalLight(0xffffff, 2.3);
+    key.position.set(4, 7, 5);
+    scene.add(key);
+    const redLight = new THREE.PointLight(0xff6b6b, 38, 14);
+    redLight.position.set(-2.8, 0.2, 2.6);
+    scene.add(redLight);
+
+    const root = new THREE.Group();
+    scene.add(root);
+
+    const bodyGroup = new THREE.Group();
+    scene.add(bodyGroup);
+
+    const synapseModel = new THREE.Group();
+    scene.add(synapseModel);
+    synapseModel.visible = false;
+
+    const tumorModel = new THREE.Group();
+    scene.add(tumorModel);
+    tumorModel.visible = false;
+
+    const modeColors = {
+      learning: new THREE.Color(0x25d0c1),
+      alzheimers: new THREE.Color(0xff6b6b),
+      parkinsons: new THREE.Color(0xf6c85f),
+      restoration: new THREE.Color(0xb195ff),
+      tumor: new THREE.Color(0xff6b6b)
+    };
+
+    const brainMaterial = new THREE.MeshStandardMaterial({
+      color: 0x68f4e7,
+      roughness: 0.45,
+      metalness: 0.08,
+      transparent: true,
+      opacity: 0.22,
+      wireframe: true
+    });
+
+    const bodyMaterial = new THREE.MeshStandardMaterial({
+      color: 0xdffdf9,
+      emissive: 0x0d605b,
+      emissiveIntensity: 0.18,
+      roughness: 0.4,
+      metalness: 0.05,
+      transparent: true,
+      opacity: 0.18,
+      wireframe: true
+    });
+
+    const nerveMaterial = new THREE.LineBasicMaterial({ color: 0x25d0c1, transparent: true, opacity: 0.36 });
+
+    function limbBetween(a, b, radius) {
+      const start = new THREE.Vector3(...a);
+      const end = new THREE.Vector3(...b);
+      const mid = start.clone().lerp(end, 0.5);
+      const direction = end.clone().sub(start);
+      const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, direction.length(), 18), bodyMaterial);
+      mesh.position.copy(mid);
+      mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
+      bodyGroup.add(mesh);
+      return mesh;
+    }
+
+    function makeBodyModel() {
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.86, 34, 22), bodyMaterial);
+      head.position.set(0, 2.75, 0);
+      head.scale.set(0.82, 1, 0.75);
+      bodyGroup.add(head);
+
+      const chest = new THREE.Mesh(new THREE.SphereGeometry(1.05, 34, 24), bodyMaterial);
+      chest.position.set(0, 1.08, 0);
+      chest.scale.set(0.78, 1.25, 0.45);
+      bodyGroup.add(chest);
+
+      const pelvis = new THREE.Mesh(new THREE.SphereGeometry(0.78, 28, 18), bodyMaterial);
+      pelvis.position.set(0, -0.32, 0);
+      pelvis.scale.set(0.9, 0.54, 0.5);
+      bodyGroup.add(pelvis);
+
+      limbBetween([-0.68, 1.55, 0], [-1.55, 0.42, 0], 0.09);
+      limbBetween([0.68, 1.55, 0], [1.55, 0.42, 0], 0.09);
+      limbBetween([-0.34, -0.72, 0], [-0.72, -2.48, 0], 0.12);
+      limbBetween([0.34, -0.72, 0], [0.72, -2.48, 0], 0.12);
+
+      const spinePts = [];
+      for (let i = 0; i <= 60; i++) {
+        const t = i / 60;
+        spinePts.push(new THREE.Vector3(Math.sin(t * Math.PI * 3) * 0.035, 2.15 - t * 3.15, 0.08));
+      }
+      bodyGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(spinePts), nerveMaterial));
+
+      [["memory", [-0.9, 0.9, 0.12]], ["movement", [0.95, 0.3, 0.12]], ["speech", [0.72, 1.62, 0.12]], ["sleep", [-0.5, -0.1, 0.12]], ["mood", [0.45, 0.9, 0.12]], ["balance", [0.32, -1.65, 0.12]]].forEach(([name, pos], index) => {
+        const mat = new THREE.MeshStandardMaterial({
+          color: index % 2 ? 0xf6c85f : 0xff6b6b,
+          emissive: index % 2 ? 0xf6c85f : 0xff6b6b,
+          emissiveIntensity: 0.65,
+          transparent: true,
+          opacity: 0.85
+        });
+        const dot = new THREE.Mesh(new THREE.SphereGeometry(0.085, 18, 12), mat);
+        dot.position.set(...pos);
+        dot.userData = { name, baseScale: 1 };
+        bodyGroup.add(dot);
+      });
+    }
+
+    function makeSynapseModel() {
+      const pre = new THREE.Mesh(
+        new THREE.SphereGeometry(1.1, 42, 28),
+        new THREE.MeshStandardMaterial({ color: 0x25d0c1, emissive: 0x0d8f87, emissiveIntensity: 0.28, roughness: 0.38, transparent: true, opacity: 0.72, wireframe: true })
+      );
+      pre.position.set(-1.55, 0.42, 0);
+      pre.scale.set(1.2, 0.58, 0.85);
+      synapseModel.add(pre);
+
+      const post = pre.clone();
+      post.material = new THREE.MeshStandardMaterial({ color: 0xb195ff, emissive: 0x46307c, emissiveIntensity: 0.32, roughness: 0.38, transparent: true, opacity: 0.72, wireframe: true });
+      post.position.set(1.65, -0.45, 0);
+      synapseModel.add(post);
+
+      const receptorMat = new THREE.MeshStandardMaterial({ color: 0xf6c85f, emissive: 0xf6c85f, emissiveIntensity: 0.75 });
+      for (let i = 0; i < 9; i++) {
+        const receptor = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.55, 0.06), receptorMat);
+        receptor.position.set(0.58 + i * 0.16, -0.11 + Math.sin(i) * 0.14, 0.06);
+        receptor.rotation.z = 0.35;
+        synapseModel.add(receptor);
+      }
+
+      const vesicleMat = new THREE.MeshStandardMaterial({ color: 0x83e377, emissive: 0x83e377, emissiveIntensity: 0.55, transparent: true, opacity: 0.85 });
+      for (let i = 0; i < 22; i++) {
+        const vesicle = new THREE.Mesh(new THREE.SphereGeometry(0.055, 16, 10), vesicleMat);
+        vesicle.position.set(-1.75 + Math.cos(i * 1.8) * 0.42, 0.35 + Math.sin(i * 1.4) * 0.22, Math.sin(i) * 0.28);
+        vesicle.userData = { seed: i / 22 };
+        synapseModel.add(vesicle);
+      }
+
+      const pathologyMat = new THREE.MeshStandardMaterial({ color: 0xff6b6b, emissive: 0xff6b6b, emissiveIntensity: 0.8, transparent: true, opacity: 0.85 });
+      for (let i = 0; i < 16; i++) {
+        const plaque = new THREE.Mesh(new THREE.IcosahedronGeometry(0.07 + (i % 3) * 0.018, 0), pathologyMat);
+        plaque.position.set(-0.55 + Math.cos(i * 0.9) * 0.55, -0.2 + Math.sin(i * 1.3) * 0.42, Math.cos(i) * 0.36);
+        plaque.userData = { seed: i / 16 };
+        synapseModel.add(plaque);
+      }
+    }
+
+    let tumorMesh;
+    let edemaHalo;
+    let necroticCore;
+    let infiltrationGroup;
+    let rulerGroup;
+    let tumorLabel;
+    const tumorPosition = new THREE.Vector3(-0.82, 0.08, 1.08);
+    const brainWidthMm = 140;
+    const brainWorldWidth = 5.4;
+    const tumorUnitsPerMm = brainWorldWidth / brainWidthMm;
+
+    function makeIrregularSphere(radius, seed, widthSegments = 48, heightSegments = 32) {
+      const geometry = new THREE.SphereGeometry(radius, widthSegments, heightSegments);
+      const position = geometry.attributes.position;
+      const vertex = new THREE.Vector3();
+      for (let i = 0; i < position.count; i++) {
+        vertex.fromBufferAttribute(position, i);
+        const n = vertex.clone().normalize();
+        const wave =
+          Math.sin(n.x * 7.1 + seed) * 0.12 +
+          Math.cos(n.y * 9.3 + seed * 0.7) * 0.1 +
+          Math.sin((n.z + n.x) * 11.4 + seed * 1.3) * 0.07;
+        vertex.multiplyScalar(1 + wave);
+        position.setXYZ(i, vertex.x, vertex.y, vertex.z);
+      }
+      geometry.computeVertexNormals();
+      return geometry;
+    }
+
+    function makeTextSprite(text) {
+      const labelCanvas = document.createElement("canvas");
+      labelCanvas.width = 512;
+      labelCanvas.height = 160;
+      const context = labelCanvas.getContext("2d");
+      context.clearRect(0, 0, labelCanvas.width, labelCanvas.height);
+      context.fillStyle = "rgba(8, 11, 16, 0.78)";
+      context.fillRect(0, 0, labelCanvas.width, labelCanvas.height);
+      context.strokeStyle = "rgba(255,255,255,0.3)";
+      context.lineWidth = 6;
+      context.strokeRect(3, 3, labelCanvas.width - 6, labelCanvas.height - 6);
+      context.fillStyle = "#eef7f5";
+      context.font = "700 54px Inter, Arial, sans-serif";
+      context.textAlign = "center";
+      context.fillText(text, labelCanvas.width / 2, 68);
+      context.fillStyle = "#a9b9bd";
+      context.font = "500 30px Inter, Arial, sans-serif";
+      context.fillText("diameter-equivalent scale", labelCanvas.width / 2, 116);
+      const texture = new THREE.CanvasTexture(labelCanvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+      const sprite = new THREE.Sprite(material);
+      sprite.scale.set(1.6, 0.5, 1);
+      return sprite;
+    }
+
+    function rebuildTumorRuler(worldDiameter, diameterMm) {
+      if (rulerGroup) {
+        tumorModel.remove(rulerGroup);
+      }
+      rulerGroup = new THREE.Group();
+      const half = worldDiameter / 2;
+      const y = -1.55;
+      const z = 1.22;
+      const x = tumorPosition.x;
+      const rulerMaterial = new THREE.LineBasicMaterial({ color: 0xf6c85f, transparent: true, opacity: 0.92 });
+      const mainLine = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(x - half, y, z),
+          new THREE.Vector3(x + half, y, z)
+        ]),
+        rulerMaterial
+      );
+      rulerGroup.add(mainLine);
+      for (let i = 0; i <= 4; i++) {
+        const tx = x - half + worldDiameter * (i / 4);
+        const tick = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(tx, y - 0.1, z),
+            new THREE.Vector3(tx, y + 0.1, z)
+          ]),
+          rulerMaterial
+        );
+        rulerGroup.add(tick);
+      }
+      tumorLabel = makeTextSprite(`${(diameterMm / 10).toFixed(1)} cm`);
+      tumorLabel.position.set(x, y - 0.38, z);
+      rulerGroup.add(tumorLabel);
+      tumorModel.add(rulerGroup);
+    }
+
+    function rebuildInfiltration(worldRadius) {
+      if (infiltrationGroup) {
+        tumorModel.remove(infiltrationGroup);
+      }
+      infiltrationGroup = new THREE.Group();
+      const tendrilMaterial = new THREE.LineBasicMaterial({ color: 0xffa057, transparent: true, opacity: 0.8 });
+      for (let i = 0; i < 16; i++) {
+        const angle = (i / 16) * Math.PI * 2;
+        const start = tumorPosition.clone().add(new THREE.Vector3(Math.cos(angle) * worldRadius * 0.78, Math.sin(angle * 1.7) * worldRadius * 0.45, Math.sin(angle) * worldRadius * 0.68));
+        const end = tumorPosition.clone().add(new THREE.Vector3(Math.cos(angle) * worldRadius * (1.28 + (i % 3) * 0.18), Math.sin(angle * 1.2) * worldRadius * 0.9, Math.sin(angle) * worldRadius * (1.18 + (i % 2) * 0.2)));
+        const mid = start.clone().lerp(end, 0.5);
+        mid.y += Math.sin(i * 2.1) * 0.22;
+        const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
+        infiltrationGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve.getPoints(28)), tendrilMaterial));
+      }
+      tumorModel.add(infiltrationGroup);
+    }
+
+    function makeTumorModel() {
+      const tumorMaterial = new THREE.MeshStandardMaterial({
+        color: 0xff6b6b,
+        emissive: 0x7a1212,
+        emissiveIntensity: 0.5,
+        roughness: 0.62,
+        metalness: 0.02
+      });
+      tumorMesh = new THREE.Mesh(makeIrregularSphere(1, 3.7), tumorMaterial);
+      tumorMesh.position.copy(tumorPosition);
+      tumorModel.add(tumorMesh);
+
+      const haloMaterial = new THREE.MeshStandardMaterial({
+        color: 0xf6c85f,
+        emissive: 0xf6c85f,
+        emissiveIntensity: 0.28,
+        roughness: 0.8,
+        transparent: true,
+        opacity: 0.16,
+        depthWrite: false,
+        wireframe: true
+      });
+      edemaHalo = new THREE.Mesh(makeIrregularSphere(1, 8.9, 36, 24), haloMaterial);
+      edemaHalo.position.copy(tumorPosition);
+      tumorModel.add(edemaHalo);
+
+      necroticCore = new THREE.Mesh(
+        makeIrregularSphere(1, 13.2, 30, 18),
+        new THREE.MeshStandardMaterial({
+          color: 0x491419,
+          emissive: 0xff6b6b,
+          emissiveIntensity: 0.18,
+          roughness: 0.9,
+          transparent: true,
+          opacity: 0.88
+        })
+      );
+      necroticCore.position.copy(tumorPosition).add(new THREE.Vector3(0.08, -0.02, 0.06));
+      tumorModel.add(necroticCore);
+
+      const sliceRing = new THREE.Mesh(
+        new THREE.TorusGeometry(1, 0.012, 10, 96),
+        new THREE.MeshStandardMaterial({ color: 0xdffdf9, emissive: 0x25d0c1, emissiveIntensity: 0.28, transparent: true, opacity: 0.65 })
+      );
+      sliceRing.position.copy(tumorPosition);
+      sliceRing.rotation.x = Math.PI / 2;
+      sliceRing.userData = { followsTumor: true };
+      tumorModel.add(sliceRing);
+    }
+
+    makeBodyModel();
+    makeSynapseModel();
+    makeTumorModel();
+
+    function makeHemisphere(side) {
+      const group = new THREE.Group();
+      const geo = new THREE.SphereGeometry(1.62, 42, 28);
+      geo.scale(1.1, 1.28, 1.55);
+      const mesh = new THREE.Mesh(geo, brainMaterial.clone());
+      mesh.position.x = side * 0.92;
+      mesh.rotation.z = side * -0.1;
+      group.add(mesh);
+
+      const folds = new THREE.Group();
+      const lineMat = new THREE.LineBasicMaterial({ color: 0xdffdf9, transparent: true, opacity: 0.22 });
+      for (let i = 0; i < 21; i++) {
+        const points = [];
+        const y = -1.35 + i * 0.135;
+        const radius = Math.sqrt(Math.max(0.1, 1 - Math.pow(y / 1.55, 2)));
+        for (let j = 0; j <= 120; j++) {
+          const t = (j / 120) * Math.PI * 2;
+          const wave = Math.sin(j * 0.32 + i * 1.7) * 0.04;
+          points.push(new THREE.Vector3(
+            side * 0.92 + Math.cos(t) * radius * 1.55 + wave,
+            y,
+            Math.sin(t) * radius * 1.12 + Math.cos(i) * 0.03
+          ));
+        }
+        folds.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), lineMat));
+      }
+      group.add(folds);
+      return group;
+    }
+
+    root.add(makeHemisphere(-1), makeHemisphere(1));
+
+    const midline = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.035, 0.035, 3.45, 20),
+      new THREE.MeshStandardMaterial({ color: 0xf6c85f, emissive: 0x4a3200, transparent: true, opacity: 0.7 })
+    );
+    midline.rotation.x = Math.PI / 2;
+    midline.position.z = -0.1;
+    root.add(midline);
+
+    const regions = {
+      entorhinal: { label: "Entorhinal", pos: [-1.1, -0.78, 1.35], base: 0x25d0c1 },
+      hippocampus: { label: "Hippocampus", pos: [-0.55, -0.95, 0.78], base: 0xf6c85f },
+      cortex: { label: "Cortex", pos: [1.15, 0.45, 1.18], base: 0x25d0c1 },
+      visual: { label: "Visual", pos: [0.78, -0.12, -1.6], base: 0x83e377 },
+      striatum: { label: "Striatum", pos: [0.72, -0.38, 0.48], base: 0xf6c85f },
+      nigra: { label: "Substantia nigra", pos: [0.12, -1.72, -0.12], base: 0xb195ff },
+      pfc: { label: "Prefrontal", pos: [0.18, 1.08, 1.48], base: 0x25d0c1 }
+    };
+
+    const markers = {};
+    const markerGroup = new THREE.Group();
+    Object.entries(regions).forEach(([keyName, region]) => {
+      const material = new THREE.MeshStandardMaterial({
+        color: region.base,
+        emissive: region.base,
+        emissiveIntensity: 0.5,
+        roughness: 0.2,
+        metalness: 0.15
+      });
+      const marker = new THREE.Mesh(new THREE.SphereGeometry(0.105, 24, 18), material);
+      marker.position.set(...region.pos);
+      marker.userData = { keyName, baseScale: 1 };
+      markers[keyName] = marker;
+      markerGroup.add(marker);
+    });
+    root.add(markerGroup);
+
+    const synapseGroup = new THREE.Group();
+    const synapseMaterial = new THREE.LineBasicMaterial({ color: 0x25d0c1, transparent: true, opacity: 0.18 });
+    function connect(a, b, lift = 0.2) {
+      const pa = new THREE.Vector3(...regions[a].pos);
+      const pb = new THREE.Vector3(...regions[b].pos);
+      const mid = pa.clone().lerp(pb, 0.5);
+      mid.y += lift;
+      const curve = new THREE.QuadraticBezierCurve3(pa, mid, pb);
+      synapseGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve.getPoints(44)), synapseMaterial));
+    }
+    [["entorhinal", "hippocampus", 0.15], ["hippocampus", "cortex", 0.8], ["pfc", "cortex", 0.45], ["nigra", "striatum", 0.25], ["striatum", "pfc", 0.85], ["visual", "cortex", 0.3], ["entorhinal", "pfc", 0.9]].forEach(([a, b, lift]) => connect(a, b, lift));
+    root.add(synapseGroup);
+
+    const particleGroup = new THREE.Group();
+    const particleGeo = new THREE.SphereGeometry(0.035, 12, 8);
+    const particles = Array.from({ length: 96 }, (_, i) => {
+      const mesh = new THREE.Mesh(particleGeo, new THREE.MeshStandardMaterial({
+        color: 0x25d0c1,
+        emissive: 0x25d0c1,
+        emissiveIntensity: 1.1,
+        transparent: true,
+        opacity: 0.75
+      }));
+      mesh.userData = { seed: i / 96, lane: i % 4 };
+      particleGroup.add(mesh);
+      return mesh;
+    });
+    root.add(particleGroup);
+
+    const routeMap = {
+      tumor: ["pfc", "cortex", "hippocampus", "entorhinal"],
+      learning: ["pfc", "hippocampus", "cortex", "visual"],
+      alzheimers: ["entorhinal", "hippocampus", "cortex", "pfc"],
+      parkinsons: ["nigra", "striatum", "pfc", "cortex"],
+      restoration: ["hippocampus", "pfc", "cortex", "entorhinal"]
+    };
+
+    const content = {
+      tumor: {
+        title: "A 4 cm tumor is visibly large inside a brain.",
+        text: "For the presentation, I would not show this as a simple red circle. I would show it as a scaled, irregular mass with a damaged center, swelling around it, and small infiltrating extensions into nearby tissue.",
+        metrics: [["~4 cm", "approximate GBM diameter at diagnosis in one review"], ["5-10 cm", "reported range for many cases in an older series"], ["not round", "irregular edge, swelling, and infiltration matter"]]
+      },
+      learning: {
+        title: "Learning changes the circuit.",
+        text: "I would explain it this way: learning is controlled change. LTP can strengthen useful connections, LTD can reduce or update them, and homeostatic plasticity keeps the system from becoming overloaded.",
+        metrics: [["30m-10h", "reported hippocampal potentiation duration"], ["68", "FreeSurfer cortical regions mapped"], ["20", "synaptic and disease-relevant genes in matrix"]]
+      },
+      alzheimers: {
+        title: "Alzheimer's pressures memory networks early.",
+        text: "The supplied SEA-AD analysis showed higher median local CPS in medial entorhinal cortex and hippocampus than in primary visual cortex, matching a memory-network vulnerability story.",
+        metrics: [["0.766", "median local CPS in medial entorhinal cortex"], ["0.672", "median local CPS in hippocampus"], ["rho -0.47", "memory slope association in 69 matched donors"]]
+      },
+      parkinsons: {
+        title: "Parkinson's changes plasticity rules.",
+        text: "Dopamine loss in substantia nigra to striatum pathways changes how experience updates action selection, habits, motivation, and motor learning.",
+        metrics: [["55", "participants in motor plasticity study"], ["17/18/20", "stable, fluctuating, dyskinetic groups"], ["not simple", "dopamine can regulate both benefit and instability"]]
+      },
+      restoration: {
+        title: "The frontier is protection, not a perfect rewrite.",
+        text: "Stimulation and prosthesis studies can support narrow tasks, but rebuilding a life history would require far more than reactivating a region.",
+        metrics: [["34-37%", "visual memory task improvement in one prosthesis study"], ["right circuit", "specificity matters more than global plasticity"], ["consent", "mental privacy and fairness stay central"]]
+      }
+    };
+
+    const scaleContent = {
+      tumor: "The tumor zoom keeps the brain transparent and puts the mass at real relative scale. The ruler shows diameter, while the halo reminds the audience that symptoms can come from tissue stress beyond the tumor core.",
+      body: "Zoomed out, the model shows why synaptic plasticity is not only a microscopic idea: changes in neural circuits can affect memory, movement, mood, sleep, speech, and independence.",
+      brain: "At the brain level, the main point is distribution. Identity-related abilities depend on interacting regions, not one memory spot or one self center.",
+      circuit: "At the circuit level, the disease story becomes more specific: Alzheimer's pressures entorhinal-hippocampal memory routes, while Parkinson's changes dopamine-guided action learning.",
+      synapse: "At the synapse level, the presentation gets microscopic: vesicle release, receptor traffic, calcium signaling, tau stress, and injury markers connect chemistry to cognition."
+    };
+
+    const cameraTargets = {
+      tumor: { position: new THREE.Vector3(-0.28, 0.08, 7.2), target: new THREE.Vector3(-0.62, 0.0, 0.82) },
+      body: { position: new THREE.Vector3(0, 0.28, 10.5), target: new THREE.Vector3(0, 0.32, 0) },
+      brain: { position: new THREE.Vector3(0, 1.05, 10.4), target: new THREE.Vector3(0, 0, 0) },
+      circuit: { position: new THREE.Vector3(0.4, 0.35, 5.7), target: new THREE.Vector3(0.25, -0.18, 0.45) },
+      synapse: { position: new THREE.Vector3(0, 0.1, 5.2), target: new THREE.Vector3(0, 0, 0) }
+    };
+
+    let activeMode = "tumor";
+    let activeScale = "tumor";
+    let burden = 42;
+    let reserve = 64;
+    let tumorDiameterMm = 40;
+    let desiredCamera = cameraTargets.tumor.position.clone();
+    let desiredTarget = cameraTargets.tumor.target.clone();
+
+    const buttons = [...document.querySelectorAll(".mode-button")];
+    const scaleButtons = [...document.querySelectorAll(".scale-button")];
+    const sizeButtons = [...document.querySelectorAll(".size-button")];
+    const burdenSlider = document.getElementById("burdenSlider");
+    const plasticitySlider = document.getElementById("plasticitySlider");
+    const tumorSlider = document.getElementById("tumorSlider");
+
+    function updateContent(mode) {
+      activeMode = mode;
+      buttons.forEach(button => button.classList.toggle("active", button.dataset.mode === mode));
+      const data = content[mode];
+      document.getElementById("modeTitle").textContent = data.title;
+      document.getElementById("modeText").textContent = data.text;
+      [["metricA", "labelA"], ["metricB", "labelB"], ["metricC", "labelC"]].forEach(([metricId, labelId], index) => {
+        document.getElementById(metricId).textContent = data.metrics[index][0];
+        document.getElementById(labelId).textContent = data.metrics[index][1];
+      });
+      synapseMaterial.color.copy(modeColors[mode]);
+      brainMaterial.color.copy(modeColors[mode]).lerp(new THREE.Color(0xffffff), 0.24);
+      Object.entries(markers).forEach(([keyName, marker]) => {
+        const hot = routeMap[mode].includes(keyName);
+        marker.material.color.set(hot ? modeColors[mode] : regions[keyName].base);
+        marker.material.emissive.set(hot ? modeColors[mode] : regions[keyName].base);
+        marker.userData.baseScale = hot ? 1.85 : 1;
+      });
+    }
+
+    function setTumorDiameter(mm) {
+      tumorDiameterMm = Number(mm);
+      const worldDiameter = tumorDiameterMm * tumorUnitsPerMm;
+      const worldRadius = worldDiameter / 2;
+      const cm = tumorDiameterMm / 10;
+      const volume = (4 / 3) * Math.PI * Math.pow(cm / 2, 3);
+      tumorMesh.scale.setScalar(worldRadius);
+      edemaHalo.scale.setScalar(worldRadius * 1.75);
+      necroticCore.scale.setScalar(worldRadius * 0.43);
+      tumorModel.children.forEach(child => {
+        if (child.userData && child.userData.followsTumor) {
+          child.scale.setScalar(worldRadius * 1.2);
+        }
+      });
+      rebuildInfiltration(worldRadius);
+      rebuildTumorRuler(worldDiameter, tumorDiameterMm);
+      document.getElementById("tumorDiameterValue").textContent = `${cm.toFixed(1)} cm`;
+      document.getElementById("tumorMmValue").textContent = `${tumorDiameterMm} mm`;
+      document.getElementById("tumorVolumeValue").textContent = `${volume.toFixed(1)} cm^3`;
+      document.getElementById("tumorBrainRatio").textContent = `${Math.round((tumorDiameterMm / brainWidthMm) * 100)}%`;
+      tumorSlider.value = String(tumorDiameterMm);
+      sizeButtons.forEach(button => button.classList.toggle("active", Number(button.dataset.tumorMm) === tumorDiameterMm));
+      if (activeScale === "tumor") {
+        desiredCamera = new THREE.Vector3(-0.28, 0.08, 6.55 + tumorDiameterMm * 0.035);
+        desiredTarget = new THREE.Vector3(-0.62, 0.0, 0.82);
+      }
+    }
+
+    function updateScale(scale) {
+      activeScale = scale;
+      scaleButtons.forEach(button => button.classList.toggle("active", button.dataset.scale === scale));
+      document.getElementById("scaleText").textContent = scaleContent[scale];
+
+      desiredCamera = cameraTargets[scale].position.clone();
+      desiredTarget = cameraTargets[scale].target.clone();
+      if (scale === "tumor") {
+        desiredCamera = new THREE.Vector3(-0.28, 0.08, 6.55 + tumorDiameterMm * 0.035);
+        desiredTarget = new THREE.Vector3(-0.62, 0.0, 0.82);
+      }
+
+      bodyGroup.visible = scale === "body";
+      bodyGroup.scale.setScalar(scale === "body" ? 0.9 : 1);
+      root.visible = scale !== "synapse";
+      synapseModel.visible = scale === "synapse";
+      tumorModel.visible = scale === "tumor";
+      document.querySelector(".stage").classList.toggle("body-view", scale === "body");
+      document.querySelector(".stage").classList.toggle("tumor-view", scale === "tumor");
+
+      if (scale === "body") {
+        root.position.set(0, 2.77, 0.12);
+        root.scale.setScalar(0.23);
+      } else if (scale === "tumor") {
+        root.position.set(0, 0, 0);
+        root.scale.setScalar(1);
+      } else if (scale === "circuit") {
+        root.position.set(-0.1, 0.05, 0);
+        root.scale.setScalar(1.42);
+      } else {
+        root.position.set(0, 0, 0);
+        root.scale.setScalar(1);
+      }
+
+      synapseGroup.visible = scale !== "body" && scale !== "tumor";
+      markerGroup.visible = scale !== "body" && scale !== "tumor";
+      particleGroup.visible = scale !== "body" && scale !== "tumor";
+    }
+
+    function focusTumorStageOnSmallScreens() {
+      if (window.matchMedia("(max-width: 680px)").matches) {
+        document.querySelector(".stage").scrollIntoView({ block: "start", behavior: "auto" });
+      }
+    }
+
+    buttons.forEach(button => button.addEventListener("click", () => {
+      updateContent(button.dataset.mode);
+      if (button.dataset.mode === "tumor") {
+        updateScale("tumor");
+        focusTumorStageOnSmallScreens();
+      } else if (activeScale === "tumor") {
+        updateScale(button.dataset.mode === "learning" || button.dataset.mode === "restoration" ? "circuit" : "brain");
+      }
+    }));
+    scaleButtons.forEach(button => button.addEventListener("click", () => {
+      updateScale(button.dataset.scale);
+      if (button.dataset.scale === "tumor") focusTumorStageOnSmallScreens();
+    }));
+    sizeButtons.forEach(button => button.addEventListener("click", () => {
+      setTumorDiameter(button.dataset.tumorMm);
+      updateContent("tumor");
+      updateScale("tumor");
+      focusTumorStageOnSmallScreens();
+    }));
+    tumorSlider.addEventListener("input", event => {
+      setTumorDiameter(event.target.value);
+      updateScale("tumor");
+    });
+    burdenSlider.addEventListener("input", event => {
+      burden = Number(event.target.value);
+      document.getElementById("burdenValue").textContent = burden + "%";
+    });
+    plasticitySlider.addEventListener("input", event => {
+      reserve = Number(event.target.value);
+      document.getElementById("plasticityValue").textContent = reserve + "%";
+    });
+
+    function bezierPoint(route, t) {
+      const names = routeMap[route];
+      const segmentCount = names.length - 1;
+      const scaled = Math.min(0.999, Math.max(0, t)) * segmentCount;
+      const index = Math.floor(scaled);
+      const local = scaled - index;
+      const a = new THREE.Vector3(...regions[names[index]].pos);
+      const b = new THREE.Vector3(...regions[names[index + 1]].pos);
+      const mid = a.clone().lerp(b, 0.5);
+      mid.y += 0.32 + index * 0.16;
+      const p1 = a.clone().lerp(mid, local);
+      const p2 = mid.clone().lerp(b, local);
+      return p1.lerp(p2, local);
+    }
+
+    function resize() {
+      const rect = canvas.getBoundingClientRect();
+      renderer.setSize(rect.width, rect.height, false);
+      camera.aspect = rect.width / Math.max(1, rect.height);
+      camera.updateProjectionMatrix();
+    }
+    window.addEventListener("resize", resize);
+    resize();
+    updateContent(activeMode);
+    updateScale(activeScale);
+    setTumorDiameter(tumorDiameterMm);
+
+    const clock = new THREE.Clock();
+    function animate() {
+      const time = clock.getElapsedTime();
+      controls.update();
+      root.rotation.y = Math.sin(time * 0.17) * 0.12;
+      root.rotation.x = Math.sin(time * 0.11) * 0.04;
+      const pressure = burden / 100;
+      const resilience = reserve / 100;
+      camera.position.lerp(desiredCamera, 0.045);
+      controls.target.lerp(desiredTarget, 0.055);
+
+      Object.values(markers).forEach(marker => {
+        const pulse = 1 + Math.sin(time * 3 + marker.position.x * 2) * 0.12;
+        marker.scale.setScalar(marker.userData.baseScale * pulse * (0.85 + resilience * 0.28));
+      });
+
+      particles.forEach((particle, index) => {
+        const speed = activeMode === "learning" ? 0.055 : 0.028 + pressure * 0.07;
+        const t = (particle.userData.seed + time * speed) % 1;
+        const p = bezierPoint(activeMode, t);
+        const offset = (particle.userData.lane - 1.5) * 0.08;
+        particle.position.set(p.x + Math.sin(time + index) * 0.025 + offset, p.y + Math.cos(time * 1.3 + index) * 0.025, p.z + offset);
+        const diseaseTint = activeMode === "alzheimers" ? modeColors.alzheimers : activeMode === "parkinsons" ? modeColors.parkinsons : modeColors[activeMode];
+        particle.material.color.copy(diseaseTint).lerp(new THREE.Color(0xffffff), activeMode === "learning" ? 0.05 : 0.12);
+        particle.material.emissive.copy(diseaseTint);
+        particle.material.opacity = 0.28 + 0.62 * (activeMode === "learning" ? resilience : pressure);
+        particle.scale.setScalar(0.65 + pressure * 1.4 + Math.sin(time * 4 + index) * 0.12);
+      });
+
+      redLight.intensity = 18 + burden * 0.34;
+
+      bodyGroup.children.forEach((child, index) => {
+        if (child.material && child.material.emissive) {
+          child.material.opacity = child.geometry.type === "SphereGeometry" && index > 2 ? 0.45 + pressure * 0.42 : 0.12 + resilience * 0.12;
+        }
+        const pulse = 1 + Math.sin(time * 2.2 + index) * 0.035;
+        if (child.userData && child.userData.name) child.scale.setScalar(pulse * (0.8 + pressure * 0.55));
+      });
+
+      synapseModel.children.forEach((child, index) => {
+        if (child.userData && typeof child.userData.seed === "number") {
+          child.position.y += Math.sin(time * 3 + index) * 0.0009;
+          child.rotation.x += 0.006 + pressure * 0.01;
+          child.rotation.y += 0.004;
+        }
+      });
+
+      if (tumorMesh) {
+        tumorMesh.rotation.y += 0.006;
+        tumorMesh.rotation.z = Math.sin(time * 0.5) * 0.05;
+        edemaHalo.rotation.y -= 0.003;
+        edemaHalo.material.opacity = 0.09 + pressure * 0.12;
+        infiltrationGroup.children.forEach((line, index) => {
+          line.material.opacity = 0.48 + pressure * 0.36 + Math.sin(time * 2.1 + index) * 0.08;
+        });
+      }
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+    animate();
+  </script>
+</body>
+</html>
