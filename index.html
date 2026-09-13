@@ -1765,9 +1765,18 @@
     }
     window.addEventListener("resize", resize);
     resize();
-    updateContent(activeMode);
-    updateScale(activeScale);
-    setTumorDiameter(tumorDiameterMm);
+    const urlParams = new URLSearchParams(window.location.search);
+    const requestedMode = urlParams.get("mode");
+    const requestedScale = urlParams.get("view");
+    const requestedSizeParam = urlParams.get("size");
+    const requestedSize = requestedSizeParam === null ? tumorDiameterMm : Number(requestedSizeParam);
+    const initialMode = requestedMode && content[requestedMode] ? requestedMode : activeMode;
+    const initialScale = requestedScale && cameraTargets[requestedScale] ? requestedScale : activeScale;
+    const initialSize = Number.isFinite(requestedSize) ? Math.min(100, Math.max(5, requestedSize)) : tumorDiameterMm;
+
+    updateContent(initialMode);
+    updateScale(initialScale);
+    setTumorDiameter(initialSize);
 
     const clock = new THREE.Clock();
     function animate() {
